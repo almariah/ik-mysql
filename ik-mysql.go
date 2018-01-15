@@ -41,7 +41,7 @@ func TablesNum(p map[string]interface{}) string {
   return tableNum
 }
 
-func ActiveConnection(p map[string]interface{}) string {
+func ActiveConnections(p map[string]interface{}) string {
   hostDSN := fmt.Sprintf("tcp(%s:%s)", host, port)
   dsn := user + ":" + pass + "@" + hostDSN + "/" + ""
   db, err := sql.Open("mysql", dsn)
