@@ -9,9 +9,9 @@ import (
 var user string
 var pass string
 var host string
-var port string
+var port int
 
-func Init(p map[string]interface{}) {
+func Init(p map[string]interface{}) error {
   user = p["user"].(string)
   pass = p["pass"].(string)
   if p["host"] == nil {
@@ -20,38 +20,46 @@ func Init(p map[string]interface{}) {
     host = p["host"].(string)
   }
   if p["port"] == nil {
-    port = "3306"
+    port = 3306
   } else {
-    port = p["port"].(string)
+    port = int(p["port"].(float64))
   }
+  return nil
 }
 
-func TablesNum(p map[string]interface{}) string {
-  hostDSN := fmt.Sprintf("tcp(%s:%s)", host, port)
+func TablesNum(p map[string]interface{}) (string, error) {
+  hostDSN := fmt.Sprintf("tcp(%s:%d)", host, port)
   dsn := user + ":" + pass + "@" + hostDSN + "/" + ""
   db, err := sql.Open("mysql", dsn)
-  database := p["db"].(string)
   if err != nil {
-    fmt.Println(err)
+    return "", err
   }
   defer db.Close()
 
+  database := p["db"].(string)
+
   var tableNum string
-  db.QueryRow("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ?", database).Scan(&tableNum)
-  return tableNum
+  err = db.QueryRow("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ?", database).Scan(&tableNum)
+  if err != nil {
+    return "", err
+  }
+  return tableNum, nil
 }
 
-func ActiveConnections(p map[string]interface{}) string {
-  hostDSN := fmt.Sprintf("tcp(%s:%s)", host, port)
+func ActiveConnections(p map[string]interface{}) (string, error) {
+  hostDSN := fmt.Sprintf("tcp(%s:%d)", host, port)
   dsn := user + ":" + pass + "@" + hostDSN + "/" + ""
   db, err := sql.Open("mysql", dsn)
   if err != nil {
-    fmt.Println(err)
+    return "", err
   }
   defer db.Close()
 
   var active string
   var val string
-  db.QueryRow("show status where `variable_name` = 'Threads_connected'").Scan(&val,&active)
-  return active
+  err = db.QueryRow("show status where `variable_name` = 'Threads_connected'").Scan(&val,&active)
+  if err != nil {
+    return "", err
+  }
+  return active, nil
 }
